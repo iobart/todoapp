@@ -21,8 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false
-      ,
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.green,
@@ -42,43 +41,32 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List todos = List.empty();
+  @override
   String title = "";
   String description = "";
   DateTime date = DateTime.now();
   bool status = false;
-  @override
+
   void initState() {
     super.initState();
-    todos = ["Hello", "Hey There", date];
-  }
-
-  createToDo() {
-    DocumentReference documentReference =
-        FirebaseFirestore.instance.collection("MyTodos").doc(title);
-
-    Map<String, dynamic> todoList = {
-      "todoTitle": title,
-      "todoDesc": description,
-      "todoDate": date,
-      "todoStatus": status
-    };
-
-    documentReference.set(todoList).whenComplete(
-        () => Logger().log(Level.info, "Data Store successfully"));
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: CustomAppBar(
-        title: widget.title,),
+        title: widget.title,
+      ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+
         children: [
           CardForm(
-            flex: 4,
-            padding: EdgeInsets.symmetric(horizontal: size.width * 0.01, vertical: size.height * 0.01),
+            flex: 1,
+            padding: EdgeInsets.all(size.width * 0.05),
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection("MyTodos")
@@ -92,13 +80,20 @@ class _MyHomePageState extends State<MyHomePage> {
                       shrinkWrap: true,
                       itemCount: snapshot.data?.docs.length,
                       itemBuilder: (BuildContext context, int index) {
-                        QueryDocumentSnapshot<Object?>? documentSnapshot =
+                        QueryDocumentSnapshot? documentSnapshot =
                             snapshot.data?.docs[index];
                         return Card(
-                        //  color: _determineCardColor(documentSnapshot),
+                          shape: RoundedRectangleBorder(
+                            side: BorderSide(color: Colors.green),
+                              borderRadius: BorderRadius.circular(10)),
+                          color: (documentSnapshot != null)
+                              ? documentSnapshot['todoStatus']
+                                  ? Colors.green[200]
+                                  : Colors.white
+                              : Colors.white,
+                          //  color: _determineCardColor(documentSnapshot),
                           elevation: 4,
                           child: ListTile(
-                            selectedTileColor: Colors.blue,
                             leading: _buttonUpdate(documentSnapshot),
                             title: Text((documentSnapshot != null)
                                 ? (documentSnapshot["todoTitle"])
@@ -108,15 +103,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                     ? documentSnapshot["todoDesc"]
                                     : "")
                                 : ""),
-
                             trailing: IconButton(
                               icon: const Icon(Icons.delete),
                               color: Colors.red,
                               onPressed: () {
                                 setState(() {
-                                  //todos.removeAt(index);
                                   Services().deleteTodo((documentSnapshot != null)
-                                      ? (documentSnapshot["todoTitle"])
+                                      ? (documentSnapshot["todoId"])
                                       : "");
                                 });
                               },
@@ -138,6 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
               builder: (BuildContext context) {
                 return AlertDialog(
                   shape: RoundedRectangleBorder(
+                    side: BorderSide(color: Colors.green),
                       borderRadius: BorderRadius.circular(10)),
                   title: const Text("Add Todo"),
                   content: SizedBox(
@@ -146,13 +140,13 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Column(
                       children: [
                         TextField(
-                          decoration: decorationWig(label: 'Title'),
+                          decoration: decorationWig(label: 'Titulo'),
                           onChanged: (String value) {
                             title = value;
                           },
                         ),
                         TextField(
-                          decoration: decorationWig(label: 'Body'),
+                          decoration: decorationWig(label: 'Descripción'),
                           onChanged: (String value) {
                             description = value;
                           },
@@ -166,7 +160,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: TextButton(
                           onPressed: () {
                             setState(() {
-                              createToDo();
+                              Services().createToDo(
+                                  title: title,
+                                  description: description,
+                                  date: date,
+                                  status: status);
                             });
                             Navigator.of(context).pop();
                           },
@@ -184,14 +182,19 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-
   Widget _buttonUpdate(documentSnapshot) {
-    return IconButton(icon: const Icon(Icons.check,color: Colors.green,), onPressed: () {
-      setState(() {
-        Services().updateTodo((documentSnapshot != null)
-            ? (documentSnapshot["todoTitle"])
-            : "");
-      });
-    });
+    return IconButton(
+        icon: const Icon(
+          Icons.check,
+          color: Colors.green,
+        ),
+        onPressed: () {
+          setState(() {
+            if (documentSnapshot != null) {
+              Services().updateTodo(documentSnapshot.data()["todoId"],
+                  documentSnapshot.data()["todoStatus"]);
+            }
+          });
+        });
   }
 }

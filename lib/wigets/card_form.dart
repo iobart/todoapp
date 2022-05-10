@@ -18,14 +18,15 @@ class CardForm extends StatelessWidget {
       child: Container(
         padding:
             padding ?? EdgeInsets.fromLTRB(40, 40, 40, (paddingBottom + 20)),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.green),
           color: Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(30),
             topRight: Radius.circular(30),
           ),
         ),
-        alignment: Alignment.centerLeft,
+        //alignment: Alignment.,
         child: child,
       ),
     );
